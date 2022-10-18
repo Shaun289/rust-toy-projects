@@ -1,3 +1,5 @@
+# [rust-toy-projects : lotto](https://shaun289.github.io/rust-toy-projects/lotto)
+
 # iced
 - [iced v0.4.2 doc](https://docs.rs/iced/0.4.2/iced/)
 
@@ -30,3 +32,4 @@ $ cargo install --locked trunk
 ```
 $ trunk serve
 ```
+
