@@ -1,5 +1,5 @@
 use iced::{
-    button, Alignment, Button, Column, Element, Sandbox, Settings, Text,
+    button, alignment, Alignment, Button, Column, Element, Sandbox, Settings, Text, Length
 };
 
 // cannot use rand in wasm
@@ -33,6 +33,7 @@ impl Lotto {
                 }
             }
         }
+        self.values.sort();
     } 
 
     fn view_lotto(&self) -> String {
@@ -67,14 +68,22 @@ impl Sandbox for Lotto {
     }
 
     fn view(&mut self) -> Element<Message> {
+        let title = Text::new("Lotto")
+            .width(Length::Fill)
+            .size(100)
+            .color([0.5, 0.5, 0.5])
+            .horizontal_alignment(alignment::Horizontal::Center);
+        let lotto_string = Text::new(Lotto::view_lotto(self))
+            .size(50);
+        let create_btn = Button::new(&mut self.create_button, Text::new("Create"))
+            .on_press(Message::CreateBtnPressed);
+
         Column::new()
             .padding(20)
             .align_items(Alignment::Center)
-            .push(Text::new(Lotto::view_lotto(self)).size(50))
-            .push(
-                Button::new(&mut self.create_button, Text::new("Create"))
-                    .on_press(Message::CreateBtnPressed),
-            )
+            .push(title)
+            .push(lotto_string)
+            .push(create_btn)
             .into()
     }
 }
