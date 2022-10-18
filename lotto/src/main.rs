@@ -2,9 +2,11 @@ use iced::{
     button, Alignment, Button, Column, Element, Sandbox, Settings, Text,
 };
 
+// cannot use rand in wasm
+use wbg_rand::{Rng, wasm_rng, math_random_rng};
 
 const LOTTO_COUNT : usize     = 6;
-const MAX_LOTTO_NUM  : u32  = 45;
+const MAX_LOTTO_NUM  : i32  = 45;
 
 
 #[derive(Default)]
@@ -21,7 +23,7 @@ enum Message {
 impl Lotto {
     fn create_lotto(&mut self) {
         for i in 0..6 {
-            self.values[i] = (i as i32)+1;
+            self.values[i] = wasm_rng().gen_range(1, MAX_LOTTO_NUM);
         }
     } 
 

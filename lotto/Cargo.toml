@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 iced = "0.4"
 iced_web = "0.4"
-
+wbg-rand = { git = "https://github.com/alexcrichton/wbg-rand", rev = "0c8d7344b3ee9c12ff9217d6c62e6ee934ccad9b" }
