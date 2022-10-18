@@ -3,7 +3,7 @@ use iced::{
 };
 
 // cannot use rand in wasm
-use wbg_rand::{Rng, wasm_rng, math_random_rng};
+use wbg_rand::{Rng, wasm_rng};
 
 const LOTTO_COUNT : usize     = 6;
 const MAX_LOTTO_NUM  : i32  = 45;
@@ -22,8 +22,16 @@ enum Message {
 
 impl Lotto {
     fn create_lotto(&mut self) {
+        let mut bitmap : i64  = 0;
         for i in 0..6 {
-            self.values[i] = wasm_rng().gen_range(1, MAX_LOTTO_NUM);
+            loop {
+                let value = wasm_rng().gen_range(0, MAX_LOTTO_NUM);
+                if (bitmap & (1 << value)) == 0 {
+                    self.values[i] = value + 1;
+                    bitmap |= 1 << value;
+                    break;
+                }
+            }
         }
     } 
 
