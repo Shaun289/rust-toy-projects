@@ -1,2 +1,1 @@
-# rust-toy-projects
-just toy-projects using rust
+# 시용 안하는 브랜치 gh-pages 볼것
