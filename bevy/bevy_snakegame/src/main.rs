@@ -1,9 +1,32 @@
 use bevy::prelude::*;
 
+const SNAKE_HEAD_COLOR: Color = Color::rgb(0.7, 0.7, 0.7);
+const ARENA_WIDTH: u32 = 10;
+const ARENA_HEIGHT: u32 = 10;
+
 #[derive(Component)]
 struct SnakeHead;
 
-const SNAKE_HEAD_COLOR: Color = Color::rgb(0.7, 0.7, 0.7);
+#[derive(Component, Clone, Copy, PartialEq, Eq)]
+struct Position {
+    x: i32,
+    y: i32,
+}
+
+#[derive(Component)]
+struct Size {
+    width: f32,
+    height: f32,
+}
+
+impl Size {
+    pub fn square(x: f32) -> Self {
+        Self {
+            width: x,
+            height: x,
+        }
+    }
+}
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
@@ -22,7 +45,9 @@ fn spawn_snake(mut commands: Commands) {
             },
             ..default()
         })
-        .insert(SnakeHead);
+        .insert(SnakeHead)
+        .insert(Position { x: 3, y: 3 })
+        .insert(Size::square(0.8));
 }
 
 fn snake_movement(
