@@ -23,6 +23,7 @@ struct SnakeSegments(Vec<Entity>);
 struct Food;
 
 struct GrowthEvent;
+struct GameOverEvent;
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 struct Position {
@@ -161,6 +162,7 @@ fn snake_movement(
     mut heads: Query<(Entity, &SnakeHead)>,
     mut positions: Query<&mut Position>,
     mut last_tail_position: ResMut<LastTailPosition>,
+    mut game_over_writer: EventWriter<GameOverEvent>,
 ) {
     if let Some((head_entity, head)) = heads.iter_mut().next() {
         let segment_positions = segments
@@ -182,6 +184,16 @@ fn snake_movement(
                 head_pos.y -= 1;
             }
         };
+        if head_pos.x < 0
+            || head_pos.y < 0
+            || head_pos.x as u32 >= ARENA_WIDTH
+            || head_pos.y as u32 >= ARENA_HEIGHT
+        {
+            game_over_writer.send(GameOverEvent);
+        }
+        if segment_positions.contains(&head_pos) {
+            game_over_writer.send(GameOverEvent);
+        }
         segment_positions
             .iter()
             .zip(segments.iter().skip(1))
@@ -242,6 +254,21 @@ fn snake_growth(
     }
 }
 
+fn game_over(
+    mut commands: Commands,
+    mut reader: EventReader<GameOverEvent>,
+    segments_res: ResMut<SnakeSegments>,
+    food: Query<Entity, With<Food>>,
+    segments: Query<Entity, With<SnakeSegment>>,
+) {
+    if reader.iter().next().is_some() {
+        for ent in food.iter().chain(segments.iter()) {
+            commands.entity(ent).despawn();
+        }
+        spawn_snake(commands, segments_res);
+    }
+}
+
 fn main() {
     App::new()
         /*
@@ -258,9 +285,11 @@ fn main() {
         .insert_resource(SnakeSegments::default())
         .insert_resource(LastTailPosition::default())
         .add_event::<GrowthEvent>()
+        .add_event::<GameOverEvent>()
         .add_startup_system(setup_camera)
         .add_startup_system(spawn_snake)
         .add_system(snake_movement_input.before(snake_movement))
+        .add_system(game_over.after(snake_movement))
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.150))
