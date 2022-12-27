@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use bevy::time::FixedTimestep;
+use bevy::{prelude::*, winit::WinitSettings};
 
 const OBJECT_COLOR: Color = Color::rgb(0.7, 0.7, 0.7);
 const ARENA_WIDTH: u32 = 200;
@@ -7,6 +7,10 @@ const ARENA_HEIGHT: u32 = 200;
 const VELOCITY_X: f32 = 5.0;
 const VELOCITY_Y: f32 = 10.0;
 const ACCEL_Y: f32 = -0.1;
+
+const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
+const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
 
 #[derive(Component)]
 struct ThrowingObject {
@@ -18,12 +22,12 @@ struct ThrowingObject {
 }
 
 #[derive(PartialEq, Copy, Clone, Component)]
-struct Size {
+struct WinSize {
     width: f32,
     height: f32,
 }
 
-impl Size {
+impl WinSize {
     pub fn square(x: f32) -> Self {
         Self {
             width: x,
@@ -86,7 +90,7 @@ fn spawn_object(mut commands: Commands) {
             accel_y: ACCEL_Y,
         })
         .insert(Position { x: 0, y: 0 })
-        .insert(Size::square(0.8));
+        .insert(WinSize::square(0.8));
 }
 
 fn move_object(
@@ -111,6 +115,58 @@ fn move_object(
     }
 }
 
+fn setup_button(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands
+        .spawn(ButtonBundle {
+            style: Style {
+                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                margin: UiRect::all(Val::Auto),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            background_color: NORMAL_BUTTON.into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(
+                "Button",
+                TextStyle {
+                    font: Default::default(),
+                    //font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                    font_size: 40.0,
+                    color: Color::rgb(0.9, 0.9, 0.9),
+                },
+            ));
+        });
+}
+
+fn button_system(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor, &Children),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut text_query: Query<&mut Text>,
+) {
+    for (interaction, mut color, children) in &mut interaction_query {
+        let mut text = text_query.get_mut(children[0]).unwrap();
+        match *interaction {
+            Interaction::Clicked => {
+                text.sections[0].value = "Press".to_string();
+                *color = PRESSED_BUTTON.into();
+            }
+            Interaction::Hovered => {
+                text.sections[0].value = "Hover".to_string();
+                *color = HOVERED_BUTTON.into();
+            }
+            Interaction::None => {
+                text.sections[0].value = "Button".to_string();
+                *color = NORMAL_BUTTON.into();
+            }
+        }
+    }
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -122,8 +178,10 @@ fn main() {
             },
             ..default()
         }))
+        .insert_resource(WinitSettings::desktop_app())
         .add_startup_system(setup_camera)
         .add_startup_system(spawn_object)
+        .add_startup_system(setup_button)
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.15))
@@ -135,5 +193,6 @@ fn main() {
                 .with_system(position_translation)
                 .with_system(size_scaling),
         )
+        .add_system(button_system)
         .run();
 }
