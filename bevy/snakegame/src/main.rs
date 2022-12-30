@@ -24,7 +24,6 @@ struct Food;
 
 struct GrowthEvent;
 struct GameOverEvent;
-struct FoodSpawnEvent;
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 struct Position {
@@ -130,29 +129,6 @@ fn spawn_snake(mut commands: Commands, mut segments: ResMut<SnakeSegments>) {
     ]);
 }
 
-fn spawn_food(mut commands: Commands) {
-    commands
-        .spawn(SpriteBundle {
-            sprite: Sprite {
-                color: FOOD_COLOR,
-                ..default()
-            },
-            /*
-            transform: Transform {
-                scale: Vec3::new(10.0, 10.0, 10.0),
-                ..default()
-            },
-            */
-            ..default()
-        })
-        .insert(Food)
-        .insert(Position {
-            x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
-            y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
-        })
-        .insert(Size::square(0.8));
-}
-
 fn spawn_segment(mut commands: Commands, position: Position) -> Entity {
     commands
         .spawn(SpriteBundle {
@@ -235,18 +211,35 @@ fn snake_movement(
     }
 }
 
-fn food_spawner(commands: Commands, mut foodspawn_reader: EventReader<FoodSpawnEvent>) {
-    if !foodspawn_reader.iter().next().is_some() {
+fn food_spawner(mut commands: Commands, foods: Query<Entity, With<Food>>) {
+    if foods.iter().count() >= 1 {
         return;
     }
-
-    spawn_food(commands);
+    commands
+        .spawn(SpriteBundle {
+            sprite: Sprite {
+                color: FOOD_COLOR,
+                ..default()
+            },
+            /*
+            transform: Transform {
+                scale: Vec3::new(10.0, 10.0, 10.0),
+                ..default()
+            },
+            */
+            ..default()
+        })
+        .insert(Food)
+        .insert(Position {
+            x: (random::<f32>() * ARENA_WIDTH as f32) as i32,
+            y: (random::<f32>() * ARENA_HEIGHT as f32) as i32,
+        })
+        .insert(Size::square(0.8));
 }
 
 fn snake_eating(
     mut commands: Commands,
     mut growth_writer: EventWriter<GrowthEvent>,
-    mut foodspawn_writer: EventWriter<FoodSpawnEvent>,
     food_position: Query<(Entity, &Position), With<Food>>,
     head_position: Query<&Position, With<SnakeHead>>,
 ) {
@@ -255,7 +248,6 @@ fn snake_eating(
             if food_pos == head_pos {
                 commands.entity(ent).despawn();
                 growth_writer.send(GrowthEvent);
-                foodspawn_writer.send(FoodSpawnEvent);
             }
         }
     }
@@ -302,12 +294,9 @@ fn main() {
         .insert_resource(LastTailPosition::default())
         .add_event::<GrowthEvent>()
         .add_event::<GameOverEvent>()
-        .add_event::<FoodSpawnEvent>()
         .add_startup_system(setup_camera)
         .add_startup_system(spawn_snake)
-        .add_startup_system(spawn_food)
         .add_system(snake_movement_input.before(snake_movement))
-        .add_system(game_over.after(snake_movement))
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.150))
@@ -316,6 +305,7 @@ fn main() {
                 .with_system(snake_growth.after(snake_eating))
                 .with_system(food_spawner.after(snake_growth)),
         )
+        .add_system(game_over.after(snake_movement))
         .add_system_set_to_stage(
             CoreStage::PostUpdate,
             SystemSet::new()
