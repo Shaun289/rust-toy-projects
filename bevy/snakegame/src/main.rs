@@ -122,6 +122,7 @@ fn spawn_snake(mut commands: Commands, mut segments: ResMut<SnakeSegments>) {
             .insert(SnakeHead {
                 direction: Direction::Up,
             })
+            .insert(SnakeSegment)
             .insert(Position { x: 3, y: 3 })
             .insert(Size::square(0.8))
             .id(),
